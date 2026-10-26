@@ -4,6 +4,7 @@
  *   node tools/render.mjs scenes/pisa.js 1.0 2.75 4.5      -> out/pisa-1.00.png ...
  *   node tools/render.mjs scenes/pisa.js --mp4 out/pisa.mp4  -> whole loop as MP4 with sound (needs ffmpeg)
  *
+ *   node tools/render.mjs scenes/pisa.js --wav out/pisa.wav  -> just the sound effects
  * Options: --scale 4  --palette ember  --out out  --fps 30 (video frame rate)  --silent
  */
 import fs from 'node:fs';
@@ -21,11 +22,12 @@ const opt = (name, def) => {
   return i < 0 ? def : args.splice(i, 2)[1];
 };
 const silent = args.includes('--silent') && args.splice(args.indexOf('--silent'), 1);
+const wavOut = opt('wav', null);
 const mp4 = opt('mp4', null), outDir = opt('out', path.join(root, 'out'));
 const paletteName = opt('palette', null), fps = +opt('fps', 30), scaleArg = opt('scale', null);
 const sceneFile = args.shift();
 const times = args.map(Number);
-if (!sceneFile || (!mp4 && !times.length)) {
+if (!sceneFile || (!mp4 && !wavOut && !times.length)) {
   console.error('usage: node tools/render.mjs <scene.js> <t...> | --mp4 out.mp4  [--scale n] [--palette name]');
   process.exit(1);
 }
@@ -128,7 +130,11 @@ function soundtrack(events, duration, rate = 48000) {
 }
 
 const name = path.basename(sceneFile, '.js');
-if (mp4) {
+if (wavOut) {
+  fs.mkdirSync(path.dirname(path.resolve(wavOut)), { recursive: true });
+  fs.writeFileSync(path.resolve(wavOut), soundtrack(state.events || scene.events || [], scene.duration));
+  console.log(`wrote ${wavOut}`);
+} else if (mp4) {
   fs.mkdirSync(path.dirname(path.resolve(mp4)), { recursive: true });
   const audio = [];
   if (!silent) {
