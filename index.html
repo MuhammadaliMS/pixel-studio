@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pixel Studio</title>
+<meta name="description" content="Make viral pixel-art videos with Claude. A free, open-source engine: every pixel is drawn in code.">
+<meta property="og:title" content="Pixel Studio: make pixel-art videos with Claude">
+<meta property="og:description" content="Free and open source. Every pixel, every physics beat and every sound effect is drawn in code.">
+<meta property="og:image" content="https://zerowing.in/pixel/media/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #efe9ef; --paper: #fbf8fb; --ink: #1d1426; --muted: #6f6378; --line: #ddd3df; --accent: #7a56c2;
+    --code: #241a2e;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.55 Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+  .pixel { font-family: Silkscreen, ui-monospace, monospace; letter-spacing: .02em; }
+  a { color: inherit; }
+
+  /* hero */
+  header { padding: 64px 0 28px; }
+  .badge {
+    display: inline-flex; gap: 8px; align-items: center; padding: 6px 12px; border-radius: 999px;
+    background: var(--paper); border: 1px solid var(--line); font-size: 13px; color: var(--muted);
+  }
+  .badge i { width: 8px; height: 8px; background: var(--accent); display: block; }
+  h1 { font-size: clamp(38px, 7vw, 76px); line-height: .98; letter-spacing: -0.035em; margin: 18px 0 16px; max-width: 14ch; }
+  h1 .pixel { font-weight: 400; letter-spacing: 0; color: var(--accent); font-size: .86em; }
+  .lede { font-size: clamp(17px, 2.2vw, 20px); color: var(--muted); max-width: 54ch; margin: 0 0 26px; }
+  .ctas { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px; border-radius: 12px;
+    font-weight: 600; font-size: 15px; text-decoration: none; border: 1px solid var(--line); background: var(--paper);
+    transition: transform .15s cubic-bezier(.2, .8, .2, 1), box-shadow .15s;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px -10px rgba(40, 20, 60, .35); }
+  .btn.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  /* gallery */
+  .grid { display: grid; gap: 18px; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); padding: 26px 0 8px; }
+  a.tile { text-decoration: none; display: grid; gap: 8px; }
+  .card {
+    border-radius: 16px; overflow: hidden; background: #000;
+    box-shadow: 0 18px 40px -22px rgba(40, 20, 60, .55), 0 2px 5px rgba(40, 20, 60, .12);
+    transition: transform .2s cubic-bezier(.2, .8, .2, 1);
+  }
+  a.tile:hover .card { transform: translateY(-4px) rotate(-.4deg); }
+  canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+  .meta { display: flex; justify-content: space-between; padding: 0 4px; font-size: 14px; }
+  .meta span { color: var(--muted); }
+
+  /* sections */
+  section { padding: 56px 0 8px; }
+  h2 { font-size: clamp(26px, 4vw, 38px); letter-spacing: -0.02em; margin: 0 0 8px; }
+  .sub { color: var(--muted); margin: 0 0 24px; max-width: 60ch; }
+  .steps { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); counter-reset: s; }
+  .step { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 20px; counter-increment: s; }
+  .step::before {
+    content: counter(s); font-family: Silkscreen, monospace; display: grid; place-items: center;
+    width: 30px; height: 30px; background: var(--ink); color: #fff; margin-bottom: 12px;
+  }
+  .step h3 { margin: 0 0 6px; font-size: 18px; }
+  .step p { margin: 0 0 12px; color: var(--muted); font-size: 15px; }
+  pre {
+    margin: 0; background: var(--code); color: #efe6ff; border-radius: 10px; padding: 12px 14px; overflow-x: auto;
+    font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; position: relative;
+  }
+  .copy {
+    position: absolute; top: 6px; right: 6px; font: 600 11px Inter, sans-serif; background: #ffffff1a; color: #fff;
+    border: 0; border-radius: 6px; padding: 4px 8px; cursor: pointer;
+  }
+  .prompts { display: flex; flex-wrap: wrap; gap: 10px; }
+  .prompt {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 999px; padding: 10px 16px; font-size: 15px;
+    cursor: pointer; transition: border-color .15s;
+  }
+  .prompt:hover { border-color: var(--ink); }
+  .tricks { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .trick { border-top: 2px solid var(--ink); padding-top: 12px; }
+  .trick b { display: block; margin-bottom: 4px; }
+  .trick span { color: var(--muted); font-size: 15px; }
+  footer { padding: 56px 0 48px; color: var(--muted); font-size: 14px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); opacity: 0; background: var(--ink); color: #fff;
+    padding: 10px 16px; border-radius: 999px; font-size: 14px; transition: .2s; pointer-events: none;
+  }
+  .toast.on { opacity: 1; transform: translate(-50%, 0); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="badge"><i></i> Free · open source · MIT</span>
+    <h1>Make viral <span class="pixel">pixel</span> videos with Claude.</h1>
+    <p class="lede">Describe a scene. Claude draws every pixel, every bit of physics and every sound effect in code. No kit to buy, no art skills needed.</p>
+    <div class="ctas">
+      <a class="btn primary" href="https://github.com/MuhammadaliMS/pixel-studio">★ Get it on GitHub</a>
+      <a class="btn" href="studio.html">Open the studio</a>
+      <a class="btn" href="#how">How it works</a>
+    </div>
+  </header>
+
+  <div class="grid" id="grid"></div>
+
+  <section id="how">
+    <h2>Make your own in three steps</h2>
+    <p class="sub">You need <a href="https://claude.com/claude-code">Claude Code</a> and Node. That's it: no installs, no build step, no dependencies.</p>
+    <div class="steps">
+      <div class="step">
+        <h3>Get the studio</h3>
+        <p>Clone the repo and give Claude the Pixel Studio skill.</p>
+        <pre><button class="copy">Copy</button>git clone https://github.com/MuhammadaliMS/pixel-studio
+cd pixel-studio
+mkdir -p ~/.claude/skills/pixel-studio
+cp skill/SKILL.md ~/.claude/skills/pixel-studio/</pre>
+      </div>
+      <div class="step">
+        <h3>Ask Claude for a scene</h3>
+        <p>Open Claude Code in the folder and describe what you want to see.</p>
+        <pre><button class="copy">Copy</button>claude "make a pixel video of the Eiffel
+Tower melting in a heatwave, ember palette"</pre>
+      </div>
+      <div class="step">
+        <h3>Export the video</h3>
+        <p>Render the loop to an MP4, with sound, ready for Reels, TikTok or Shorts.</p>
+        <pre><button class="copy">Copy</button>node tools/render.mjs scenes/eiffel.js \
+  --mp4 out/eiffel.mp4</pre>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Steal an idea</h2>
+    <p class="sub">Click one to copy it as a prompt for Claude.</p>
+    <div class="prompts" id="prompts"></div>
+  </section>
+
+  <section>
+    <h2>Why it looks right</h2>
+    <p class="sub">The engine enforces the rules pixel artists follow, so Claude can't make blurry, generic AI art.</p>
+    <div class="tricks">
+      <div class="trick"><b>Tiny canvas</b><span>Drawn at 256×320, then scaled up with no smoothing. Every pixel stays crisp.</span></div>
+      <div class="trick"><b>Palettes, not colours</b><span>Pixels store colour numbers, so one click recolours a whole scene.</span></div>
+      <div class="trick"><b>Dithering</b><span>Smoke, glow and shadows use checker patterns instead of blurry transparency.</span></div>
+      <div class="trick"><b>12 fps</b><span>Motion steps like hand-drawn animation. Physics is precomputed, so every frame is exact.</span></div>
+      <div class="trick"><b>Outlines + shading</b><span>Characters get lit, rounded shading and a crisp outline, so they pop.</span></div>
+      <div class="trick"><b>Synth sound</b><span>Every tick, crack and boom is generated in code. No audio files needed.</span></div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Pixel Studio · MIT licensed · made with Claude</span>
+    <a href="https://github.com/MuhammadaliMS/pixel-studio">github.com/MuhammadaliMS/pixel-studio</a>
+  </footer>
+</div>
+<div class="toast" id="toast">Copied</div>
+
+<script src="src/pixel.js"></script>
+<script src="scenes/pisa.js"></script>
+<script src="scenes/forest.js"></script>
+<script src="scenes/lab.js"></script>
+<script src="scenes/rocket.js"></script>
+<script src="scenes/gym.js"></script>
+<script>
+  const grid = document.getElementById('grid');
+  PX.scenes.forEach((scene, i) => {
+    const a = document.createElement('a');
+    a.className = 'tile';
+    a.href = `studio.html?scene=${i}`;
+    a.innerHTML = `<div class="card"><canvas></canvas></div>
+      <div class="meta"><b>${scene.name}</b><span>${scene.palette}</span></div>`;
+    grid.append(a);
+    PX.player(a.querySelector('canvas'), scene, { scale: Math.max(1, Math.round(384 / scene.w)) });
+  });
+
+  const toast = document.getElementById('toast');
+  function copy(text) {
+    navigator.clipboard.writeText(text).then(() => {
+      toast.classList.add('on');
+      setTimeout(() => toast.classList.remove('on'), 1200);
+    });
+  }
+  document.querySelectorAll('pre').forEach((pre) => {
+    pre.querySelector('.copy').onclick = () => copy(pre.innerText.replace(/^Copy\n?/, ''));
+  });
+
+  const ideas = [
+    'a cat slowly pushing a glass off a table, ember palette',
+    'the Titanic hitting the iceberg, with a depth counter, mono palette',
+    'a volcano erupting on a tiny island, with a pressure gauge',
+    'a dragon guarding a pile of gold that slowly wakes up',
+    'a Jenga tower losing one block at a time until it falls',
+    'a hacker robot cracking a password, digit by digit, teal palette',
+    'a skateboarder landing a kickflip, gameboy palette',
+    'the moon landing, countdown to touchdown, mono palette',
+  ];
+  const box = document.getElementById('prompts');
+  for (const idea of ideas) {
+    const b = document.createElement('button');
+    b.className = 'prompt';
+    b.textContent = idea;
+    b.onclick = () => copy(`make a pixel video of ${idea}`);
+    box.append(b);
+  }
+</script>
+</body>
+</html>

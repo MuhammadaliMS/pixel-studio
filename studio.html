@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pixel Studio</title>
+<style>
+  :root {
+    --bg: #ebe5ec; --ink: #1d1426; --muted: #6f6378; --chip: #ffffff; --line: #d8cfdb;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink);
+    font: 15px/1.4 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    display: grid; place-items: center; padding: 24px 16px;
+  }
+  main { width: min(440px, 100%); display: grid; gap: 16px; }
+  h1 { margin: 0; font-size: 20px; letter-spacing: -0.01em; }
+  h1 span { color: var(--muted); font-weight: 500; }
+  .card {
+    border-radius: 22px; overflow: hidden; background: #000;
+    box-shadow: 0 24px 60px -24px rgba(40, 20, 60, .45), 0 2px 6px rgba(40, 20, 60, .15);
+  }
+  canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  button, select {
+    font: inherit; font-size: 14px; border: 1px solid var(--line); background: var(--chip); color: var(--ink);
+    border-radius: 999px; padding: 8px 14px; cursor: pointer;
+  }
+  button:hover { border-color: var(--muted); }
+  button.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+  button[aria-pressed="true"] { outline: 2px solid var(--ink); outline-offset: 1px; }
+  .swatch { display: inline-flex; gap: 0; padding: 4px; }
+  .swatch i { width: 12px; height: 22px; display: block; }
+  .swatch i:first-child { border-radius: 99px 0 0 99px; } .swatch i:last-child { border-radius: 0 99px 99px 0; }
+  .bar { height: 4px; background: var(--line); border-radius: 4px; overflow: hidden; }
+  .bar div { height: 100%; width: 0; background: var(--ink); }
+  small { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Pixel Studio <span>· free, open source · <a href="./">gallery</a></span></h1>
+  <div class="card"><canvas id="screen"></canvas></div>
+  <div class="bar"><div id="progress"></div></div>
+  <div class="row">
+    <select id="scene" aria-label="Scene"></select>
+    <button id="play">Pause</button>
+    <button id="restart">Restart</button>
+    <button id="sound">Sound off</button>
+    <button id="rec" class="primary">Record video</button>
+  </div>
+  <div class="row" id="palettes" aria-label="Palette"></div>
+  <small>Drawn at 256×320, stepped at 12 fps, scaled up with no smoothing. Recording captures one loop with sound.</small>
+</main>
+
+<script src="src/pixel.js"></script>
+<script src="scenes/pisa.js"></script>
+<script src="scenes/forest.js"></script>
+<script src="scenes/lab.js"></script>
+<script src="scenes/rocket.js"></script>
+<script src="scenes/gym.js"></script>
+<script>
+  const canvas = document.getElementById('screen');
+  const sel = document.getElementById('scene');
+  const params = new URLSearchParams(location.search);
+  let player, current;
+
+  PX.scenes.forEach((s, i) => sel.add(new Option(s.name, i)));
+  sel.value = params.get('scene') || 0;
+
+  function load(i) {
+    // a fresh canvas per scene so the old loop has nothing to draw into
+    const fresh = canvas.cloneNode();
+    document.querySelector('.card').replaceChildren(fresh);
+    current = PX.scenes[i];
+    player = PX.player(fresh, current, { scale: Math.round(1024 / current.w) });
+    player.onTime = (t) => (document.getElementById('progress').style.width = `${(t / current.duration) * 100}%`);
+    if (params.has('t')) window.PX_SEEK(parseFloat(params.get('t')));
+    if (params.has('palette')) player.setPalette(params.get('palette'));
+    markPalette(params.get('palette') || current.palette);
+  }
+
+  const pal = document.getElementById('palettes');
+  for (const [name, hexes] of Object.entries(PX.palettes)) {
+    const b = document.createElement('button');
+    b.className = 'swatch'; b.title = name; b.dataset.name = name;
+    b.innerHTML = hexes.filter((_, i) => i % 2 || i === 7).map((h) => `<i style="background:${h}"></i>`).join('');
+    b.onclick = () => { player.setPalette(name); markPalette(name); };
+    pal.append(b);
+  }
+  function markPalette(name) {
+    pal.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.name === name));
+  }
+
+  document.getElementById('play').onclick = (e) => {
+    player.playing ? player.pause() : player.play();
+    e.target.textContent = player.playing ? 'Pause' : 'Play';
+  };
+  document.getElementById('restart').onclick = () => player.restart();
+  document.getElementById('sound').onclick = (e) => {
+    PX.audio.on ? PX.audio.disable() : PX.audio.enable();
+    e.target.textContent = PX.audio.on ? 'Sound on' : 'Sound off';
+  };
+  document.getElementById('rec').onclick = (e) => {
+    PX.audio.enable();
+    document.getElementById('sound').textContent = 'Sound on';
+    e.target.disabled = true; e.target.textContent = 'Recording…';
+    player.record(() => { e.target.disabled = false; e.target.textContent = 'Record video'; });
+  };
+  sel.onchange = () => load(sel.value);
+  load(sel.value);
+</script>
+</body>
+</html>
