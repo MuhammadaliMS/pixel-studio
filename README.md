@@ -2,7 +2,7 @@
 
 **Make viral pixel-art videos with Claude. Free and open source.**
 
-You describe a scene, and Claude draws every pixel, every physics beat and every sound effect in plain JavaScript. There's no kit to buy, no art skills to learn and nothing to install.
+You describe a scene, and Claude draws every pixel, every physics beat and every sound effect in plain JavaScript. You don't need art skills, and there's nothing to install.
 
 **[▶ See it live at zerowing.in/pixel](https://zerowing.in/pixel/)** · [Open the studio](https://zerowing.in/pixel/studio.html)
 
